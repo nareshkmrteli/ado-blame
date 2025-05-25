@@ -17,7 +17,8 @@
   },
   "icon": "images/ado_icon.png",
   "activationEvents": [
-    "*"
+    "onStartupFinished",
+    "workspaceContains:.git"
   ],
   "keywords": [
     "git",
@@ -28,8 +29,8 @@
   ],
   "main": "./out/src/extension",
   "scripts": {
-    "vscode:prepublish": "node ./node_modules/vscode/bin/compile",
-    "compile": "tsc -p ./",
+    "vscode:prepublish": "npm run compile",
+    "compile": "webpack && tsc -p ./",
     "pretest": "npm run compile",
     "test": "mocha -r ts-node/register 'test/unit/**/*.test.ts'",
     "test:coverage": "nyc --reporter=html --reporter=text mocha -r ts-node/register 'test/unit/**/*.test.ts'",
