@@ -90,7 +90,7 @@ function showMessage(context: ExtensionContext, repoDir: string) {
 
             try {
               // First show basic commit info
-              const basicMessage = `Commit ${hash}\n${commitInfo.summary}\nBy ${
+              const basicMessage = `${commitInfo.summary}\nBy ${
                 commitInfo.author.name
               } on ${new Date(commitInfo.time * 1000).toLocaleString()}`;
               window.showInformationMessage(basicMessage);
