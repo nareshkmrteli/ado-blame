@@ -9,6 +9,7 @@ import {
   StatusBarAlignment,
   workspace,
   commands,
+  ViewColumn,
 } from "vscode";
 import * as fs from "fs";
 import * as path from "path";
@@ -89,22 +90,12 @@ function showMessage(context: ExtensionContext, repoDir: string) {
             const adoService = new AzureDevOpsService();
 
             try {
-              // First show basic commit info
-              const basicMessage = `${commitInfo.summary}\nBy ${
-                commitInfo.author.name
-              } on ${new Date(commitInfo.time * 1000).toLocaleString()}`;
-              window.showInformationMessage(basicMessage);
-
-              // Then enrich with Azure DevOps information
+              
               const enrichedMessage = await adoService.enrichBlameInfo(
                 commitInfo.summary
               );
               if (enrichedMessage !== commitInfo.summary) {
-                // Only show if there's additional Azure DevOps information
-                window.showInformationMessage("Azure DevOps Details:", {
-                  modal: true,
-                  detail: enrichedMessage,
-                });
+                showHtmlContent(commitInfo.summary, enrichedMessage);
               }
             } catch (error) {
               console.error("Error fetching Azure DevOps details:", error);
@@ -120,4 +111,29 @@ function showMessage(context: ExtensionContext, repoDir: string) {
         });
     }
   });
+}
+
+function showHtmlContent(title: string, content: string) {
+  const panel = window.createWebviewPanel(
+    'gitBlameInfo',
+    title,
+    ViewColumn.Beside,
+    {
+      enableScripts: true,
+      localResourceRoots: [], // Add if loading local resources
+    }
+  );
+
+  panel.webview.html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+     ${content}
+    </body>
+    </html>
+  `;
 }

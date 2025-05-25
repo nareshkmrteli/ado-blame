@@ -136,7 +136,7 @@ export class TextDecorator {
       dateNow,
       new Date(commit.author.timestamp * 1000)
     );
-
+    
     return "ADO#" + workItemId + " " + author + " ( " + dateText + " )";
   }
 
