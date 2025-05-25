@@ -114,8 +114,12 @@ export class GitBlameController {
     if (lineNumber in blameInfo.lines) {
       const hash = blameInfo.lines[lineNumber].hash;
       const commitInfo = blameInfo.commits[hash];
-      let message = this._textDecorator.toTextView(new Date(), commitInfo);
-      this.view.update(message);
+      let message = this._textDecorator.toTextView(commitInfo);
+      if (message) {
+        this.view.update(message);
+      } else {
+        this.clear();
+      }
     } else {
       // No line info.
       this.clear();
@@ -128,20 +132,10 @@ export class GitBlameController {
 }
 
 export class TextDecorator {
-  toTextView(dateNow: Date, commit: BlameInfo["commits"][string]): string {
-    const author = commit.author.name;
+  toTextView(commit: BlameInfo["commits"][string]): string|null {
     const summary = commit.summary;
     const workItemId = this.extractWorkItemId(summary);
-    const dateText = this.toDateText(
-      dateNow,
-      new Date(commit.author.timestamp * 1000)
-    );
-    
-    return "ADO#" + workItemId + " " + author + " ( " + dateText + " )";
-  }
-
-  private toDateText(dateNow: Date, dateThen: Date): string {
-    return moment(dateThen).from(dateNow);
+    return workItemId ? "ADO#" + workItemId : null;
   }
 
   private extractWorkItemId(commitMessage: string): string | null {

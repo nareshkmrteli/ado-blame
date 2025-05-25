@@ -19,11 +19,11 @@ const gitBlameShell = require("git-blame");
 
 export function activate(context: ExtensionContext) {
   // Workspace not using a folder. No access to git repo.
-  if (!workspace.rootPath) {
+  if (!workspace.workspaceFolders) {
     return;
   }
 
-  const workspaceRoot = workspace.rootPath;
+  const workspaceRoot = workspace.workspaceFolders[0].uri.fsPath;
   commands.registerCommand("extension.blame", () => {
     showMessage(context, workspaceRoot);
   });
