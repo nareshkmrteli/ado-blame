@@ -30,7 +30,7 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-Please report any issues on our [GitHub repository](https://github.com/delhivery/vscode-ado-blame/issues).
+Please report any issues on our [GitHub repository](https://github.com/nareshkmrteli/ado-blame/issues).
 
 ## Release Notes
 
