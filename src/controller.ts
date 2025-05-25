@@ -1,66 +1,135 @@
-
 import {Disposable, window, TextEditor, TextEditorSelectionChangeEvent} from 'vscode';
-import {GitBlame} from './gitblame';
+import {GitBlame} from './blame';
 import * as path from 'path';
 import * as moment from 'moment';
+import {AzureDevOpsService} from './ado';
+
+interface BlameInfo {
+    lines: {
+        [key: string]: {
+            hash: string;
+        };
+    };
+    commits: {
+        [key: string]: {
+            author: {
+                name: string;
+                timestamp: number;
+            };
+            summary: string;
+            time: number;
+        };
+    };
+}
+
+interface View {
+    update: (message: string) => void;
+}
+
+interface Editor {
+    document: {
+        fileName: string;
+    };
+    selection: {
+        active: {
+            line: number;
+        };
+    };
+}
 
 export class GitBlameController {
-
     private _disposable: Disposable;
-    private _textDecorator: TextDecorator
+    private _textDecorator: TextDecorator;
+    private adoService: AzureDevOpsService;
 
-    constructor(private gitBlame: GitBlame, private gitRoot: string, private view) {
+    constructor(private gitBlame: GitBlame, private gitRoot: string, private view: View) {
         const self = this;
 
-        const disposables: Disposable[] = [];
-
-        window.onDidChangeActiveTextEditor(self.onTextEditorChange, self, disposables);
-        window.onDidChangeTextEditorSelection(self.onTextEditorSelectionChange, self, disposables);
-
-        this.onTextEditorChange(window.activeTextEditor);
-
-        this._disposable = Disposable.from(...disposables);
+        this._disposable = Disposable.from();
         this._textDecorator = new TextDecorator();
-    }
-
-    onTextEditorChange(editor: TextEditor) : void {
-        this.clear();
-
-        if (!editor) return;
-
-        const doc = editor.document;
-
-        if (!doc) return;
-        if (doc.isUntitled) return; // Document hasn't been saved and is not in git.
-
-        const lineNumber = editor.selection.active.line + 1; // line is zero based
-        const file = path.relative(this.gitRoot, editor.document.fileName);
-
-        this.gitBlame.getBlameInfo(file).then((info) => {
-            this.show(info, lineNumber);
-        }, () => {
-            // Do nothing.
-        });
-    }
-
-    onTextEditorSelectionChange(textEditorSelectionChangeEvent: TextEditorSelectionChangeEvent) : void {
-        this.onTextEditorChange(textEditorSelectionChangeEvent.textEditor);
+        this.adoService = new AzureDevOpsService();
     }
 
     clear() {
-        this.view.refresh('');
+        this.view.update('');
     }
 
-    show(blameInfo: Object, lineNumber: number) : void {
-
-        if (lineNumber in blameInfo['lines']) {
-            const hash = blameInfo['lines'][lineNumber]['hash'];
-            const commitInfo = blameInfo['commits'][hash];
-
-            this.view.refresh(this._textDecorator.toTextView(new Date(), commitInfo));
+    async show(blameInfo: BlameInfo, lineNumber: number): Promise<void> {
+        if (lineNumber in blameInfo.lines) {
+            const hash = blameInfo.lines[lineNumber].hash;
+            const commitInfo = blameInfo.commits[hash];
+            await this.showCommitInfo(commitInfo);
         } else {
             // No line info.
+            this.clear();
         }
+    }
+
+    private async showCommitInfo(commitInfo: BlameInfo['commits'][string]) {
+        let message = this._textDecorator.toTextView(new Date(), commitInfo);
+        
+        try {
+            message = await this.adoService.enrichBlameInfo(message);
+        } catch (err) {
+            console.error('Failed to enrich blame info with ADO data:', err);
+        }
+
+        this.view.update(message);
+    }
+
+    public async blameLink() {
+        const editor = this.getEditor();
+        if (!editor) {
+            return;
+        }
+
+        const file = editor.document.fileName;
+        const lineNumber = editor.selection.active.line;
+
+        try {
+            const info = await this.gitBlame.getBlameInfo(file);
+            const commitInfo = await this.getCommitInfo(info, lineNumber.toString());
+            if (commitInfo) {
+                const message = await this.enrichCommitMessage(commitInfo);
+                this.view.update(message);
+            }
+        } catch (err) {
+            console.error('Failed to get blame info:', err);
+        }
+    }
+
+    private getCommitInfo(blameInfo: BlameInfo, lineNumber: string) {
+        if (lineNumber in blameInfo.lines) {
+            const hash = blameInfo.lines[lineNumber].hash;
+            const commitInfo = blameInfo.commits[hash];
+            return commitInfo;
+        }
+        return null;
+    }
+
+    private async enrichCommitMessage(commit: BlameInfo['commits'][string]) {
+        const author = commit.author.name;
+        const summary = commit.summary;
+        const time = commit.time;
+
+        let message = `${summary} - ${author} (${this.getDateText(time)})`;
+
+        try {
+            message = await this.adoService.enrichBlameInfo(message);
+        } catch (err) {
+            console.error('Failed to enrich blame info with ADO data:', err);
+        }
+
+        return message;
+    }
+
+    private getDateText(time: number): string {
+        const date = new Date(time * 1000);
+        return date.toLocaleDateString();
+    }
+
+    private getEditor(): Editor | null {
+        return window.activeTextEditor as Editor | null;
     }
 
     dispose() {
@@ -68,34 +137,15 @@ export class GitBlameController {
     }
 }
 
-
 export class TextDecorator {
+    toTextView(dateNow: Date, commit: BlameInfo['commits'][string]): string {
+        const author = commit.author.name;
+        const dateText = this.toDateText(dateNow, new Date(commit.author.timestamp * 1000));
 
-    toTextView(dateNow: Date, commit: Object) : string {
-        const author = commit['author'];
-        const dateText = this.toDateText(dateNow, new Date(author['timestamp'] * 1000));
-
-        return 'Blame ' + author['name'] + ' ( ' + dateText + ' )';
+        return `${commit.summary} - ${author} (${dateText})`;
     }
 
-    toDateText(dateNow: Date, dateThen: Date) : string {
-
-        const momentNow = moment(dateNow);
-        const momentThen = moment(dateThen);
-
-        const months = momentNow.diff(momentThen, 'months');
-        const days = momentNow.diff(momentThen, 'days');
-
-        if (months <= 1) {
-            if (days == 0) {
-                return 'today';
-            } else if (days == 1) {
-                return 'yesterday';
-            } else {
-                return days + ' days ago';
-            }
-        } else {
-            return months + ' months ago';
-        }
+    private toDateText(dateNow: Date, dateThen: Date): string {
+        return moment(dateThen).from(dateNow);
     }
 }

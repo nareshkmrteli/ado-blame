@@ -1,28 +1,20 @@
-
 import {StatusBarItem} from 'vscode';
 
-
 export interface IView {
-    
-    /**
-     * Refresh the view. 
-     */
-    refresh(text: string): void;
+    update(text: string): void;
 }
 
 export class StatusBarView implements IView {
-    
     private _statusBarItem: StatusBarItem;
     
     constructor(statusBarItem: StatusBarItem) {
         this._statusBarItem = statusBarItem;
         this._statusBarItem.command = "extension.blame"
-    };
-    
-    refresh(text: string) {
+    }
+
+    update(text: string) {
         this._statusBarItem.text = '$(git-commit) ' + text;
-        this._statusBarItem.tooltip = 'git blame';
-        // this._statusBarItem.command = 'extension.blame';
+        this._statusBarItem.tooltip = 'ADO Blame';
         this._statusBarItem.show();
     }
 }

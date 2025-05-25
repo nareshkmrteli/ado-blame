@@ -1,15 +1,17 @@
-import {GitBlame} from './gitblame';
+import {GitBlame} from './blame';
 import {StatusBarView} from './view';
 import {GitBlameController} from './controller';
+import {AzureDevOpsService} from './ado';
+
 import {window, ExtensionContext, Disposable, StatusBarAlignment,
     workspace, TextEditor, TextEditorSelectionChangeEvent, commands} from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as vscode from 'vscode';
 
-const gitBlameShell= require('git-blame');
+const gitBlameShell = require('git-blame');
 
 export function activate(context: ExtensionContext) {
-
     // Workspace not using a folder. No access to git repo.
     if (!workspace.rootPath) {
         return;
@@ -36,14 +38,15 @@ function lookupRepo(context: ExtensionContext, repoDir: string) {
             if (parentDir != repoDir) {
                 lookupRepo(context, parentDir);
             }
-        }
-        else {
+        } else {
             const statusBar = window.createStatusBarItem(StatusBarAlignment.Left);
             const gitBlame = new GitBlame(repoPath, gitBlameShell);
-            const controller = new GitBlameController(gitBlame, repoDir, new StatusBarView(statusBar));
+            const view = new StatusBarView(statusBar);
+            const controller = new GitBlameController(gitBlame, repoDir, view);
 
             context.subscriptions.push(controller);
             context.subscriptions.push(gitBlame);
+            context.subscriptions.push(statusBar);
         }
     });
 }
@@ -58,8 +61,7 @@ function showMessage(context: ExtensionContext, repoDir: string) {
             if (parentDir != repoDir) {
                 showMessage(context, parentDir);
             }
-        }
-        else {
+        } else {
             const editor = window.activeTextEditor;
             
             if (!editor) return;
@@ -74,17 +76,20 @@ function showMessage(context: ExtensionContext, repoDir: string) {
             const file = path.relative(repoDir, editor.document.fileName);
 
             gitBlame.getBlameInfo(file).then((info) => {
+                if (lineNumber in info.lines) {
+                    const hash = info.lines[lineNumber].hash;
+                    const commitInfo = info.commits[hash];
+                    const adoService = new AzureDevOpsService();
 
-                if (lineNumber in info['lines']) {
-                
-                    const hash = info['lines'][lineNumber]['hash'];
-                    const commitInfo = info['commits'][hash];
-
-                    window.showInformationMessage(hash + ' ' + commitInfo['summary']);
+                    window.showInformationMessage(`${hash} ${commitInfo.summary}`);
                 }
             });
         }
     });
+}
+
+function getConfiguration() {
+    return vscode.workspace.getConfiguration('adoblame');
 }
 
 

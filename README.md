@@ -1,37 +1,50 @@
-# Git Blame
+# ADO Blame
 
-See Git Blame information in the status bar for the currently selected line. 
+A Visual Studio Code extension that shows git blame information in the status bar with Azure DevOps work item integration.
 
-![Feature Usage](https://github.com/wadeanderson7/vscode-gitblame/raw/master/images/GitBlamePreview.gif)
+## Features
 
-# Install
+- Shows commit blame information for the currently selected line in the status bar
+- Integrates with Azure DevOps to show work item details
+- Supports both standard blame tracking and Azure DevOps work item integration
+- Easy configuration through VS Code settings
 
-Open up VS Code.
+## Requirements
 
-1. Type `F1`
-2. Type `ext` in command palette.
-3. Select "install" and hit enter.
-4. Type "blame"
-5. Select "Git Blame" extension and hit enter. 
+- Git installed and available in PATH
+- Azure DevOps Personal Access Token (PAT) for work item integration
+- Visual Studio Code version 1.0.0 or higher
 
-# Backlog
+## Extension Settings
 
-* Click on the status bar to see more blame info, [including commit SHA](https://github.com/waderyan/vscode-gitblame/issues/3)
-* [Show blame line ranges](https://github.com/waderyan/vscode-gitblame/issues/1)
+This extension contributes the following settings:
 
-# [Known Issues](https://github.com/waderyan/vscode-gitblame/issues)
+* `adoblame.azureDevOps.pat`: Azure DevOps Personal Access Token (PAT) for accessing work item information
+* `adoblame.azureDevOps.organizationUrl`: Azure DevOps organization URL (e.g., https://dev.azure.com/your-org)
 
-# Update Log
+## Usage
 
-Version 1.1
+1. Open a file in a Git repository
+2. The blame information for the current line will be shown in the status bar
+3. If the commit message contains an Azure DevOps work item reference (e.g., #123 or AB#123), the work item details will be shown
 
-* Reduced text size which was causing the blame info not to show. 
-* Merged in [PR](https://github.com/waderyan/vscode-gitblame/pull/5) (credit to [@fogzot](https://github.com/fogzot)) that searches for .git in parent dirs.
+## Known Issues
 
-Version 1.2
+Please report any issues on our [GitHub repository](https://github.com/delhivery/vscode-ado-blame/issues).
 
-* Merged in [PR](https://github.com/waderyan/vscode-gitblame/pull/10) replacing 'Hello World' message with hash and commit message (credit to [@carloscz](https://github.com/carloscz)). 
+## Release Notes
 
-Version 1.3
+### 1.0.0
 
-* Merged in [PR](https://github.com/waderyan/vscode-gitblame/pull/12) to make the status bar message interactive (credit to [@j-em](https://github.com/j-em));
+Initial release of ADO Blame:
+- Commit blame information in status bar
+- Azure DevOps work item integration
+- Configuration options for Azure DevOps connection
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License.
