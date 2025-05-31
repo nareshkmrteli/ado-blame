@@ -140,8 +140,6 @@ export class TextDecorator {
 
   private extractWorkItemId(commitMessage: string): string | null {
     const match = commitMessage.match(workItemPattern);
-    console.log(match);
-
     if (match) {
       return match[1] || match[2];
     }
