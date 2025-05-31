@@ -43,6 +43,8 @@ export class GitBlame {
   getBlameInfo(fileName: string): Promise<BlameInfo> {
     const self = this;
     return new Promise<BlameInfo>((resolve, reject) => {
+      if (!fileName) reject('file missing');
+
       if (self.needsBlame(fileName)) {
         self.blameFile(self.repoPath, fileName).then(
           (blameInfo) => {

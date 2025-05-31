@@ -69,25 +69,27 @@ export class GitBlameController {
 
     this._disposable = Disposable.from(...disposables);
     this._textDecorator = new TextDecorator();
-    
   }
-
-  private async onTextEditorChange(editor: TextEditor | undefined) {
+  private async handleChange(editor: TextEditor | undefined) {
     if (!editor) {
       this.clear();
       return;
     }
-
     const file = path.relative(this.gitRoot, editor.document.fileName);
+    if (!file || editor.document.isUntitled || editor.document.uri.scheme !== 'file' || file.startsWith('.../')) return;
     const lineNumber = editor.selection.active.line + 1;
 
     try {
       const info = await this.gitBlame.getBlameInfo(file);
       await this.show(info, lineNumber);
     } catch (err) {
-      console.error("Error in text editor change handler:", err);
+      console.error("Error in text editor handleChange handler:", err);
       this.clear();
     }
+  }
+
+  private async onTextEditorChange(editor: TextEditor | undefined) {
+    return await this.handleChange(editor);
   }
 
   private async onTextEditorSelectionChange(
@@ -95,16 +97,7 @@ export class GitBlameController {
   ) {
     this.onTextEditorChange(event.textEditor);
     const editor = event.textEditor;
-    const file = path.relative(this.gitRoot, editor.document.fileName);
-    const lineNumber = editor.selection.active.line + 1;
-
-    try {
-      const info = await this.gitBlame.getBlameInfo(file);
-      await this.show(info, lineNumber);
-    } catch (err) {
-      console.error("Error in selection change handler:", err);
-      this.clear();
-    }
+    return await this.handleChange(editor);
   }
 
   clear() {
