@@ -1,1 +1,1 @@
-export const workItemPattern = /AB[#-](\d+)/;
+export const workItemPattern = /.*AB[#-](\d+).*/g;
