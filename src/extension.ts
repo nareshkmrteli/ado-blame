@@ -63,7 +63,6 @@ async function fetchAdoDetails(gitBlame: GitBlame, adoService: AzureDevOpsServic
   if (doc.isUntitled) return;
   const lineNumber = editor.selection.active.line + 1;
   const file = path.relative(gitRoot, editor.document.fileName);
-  
   await gitBlame
     .getBlameInfo(file)
     .then(async (info) => {
@@ -108,7 +107,7 @@ function showHtmlContent(title: string, content: string) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
-     ${content}
+      ${content}
     </body>
     </html>
   `;

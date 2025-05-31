@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
-import * as azdev from 'azure-devops-node-api';
+import { workspace, window } from 'vscode';
+import { WebApi, getPersonalAccessTokenHandler } from 'azure-devops-node-api';
 import { workItemPattern } from './const';
 export class AzureDevOpsService {
-    private connection: azdev.WebApi | undefined;
+    private connection: WebApi | undefined;
     private organizationUrl: string | undefined;
 
     constructor() {
@@ -11,17 +11,17 @@ export class AzureDevOpsService {
 
     private async initializeConnection() {
         try {
-            const config = vscode.workspace.getConfiguration('adoblame');
+            const config = workspace.getConfiguration('adoblame');
             const pat = config.get<string>('azureDevOps.pat');
             this.organizationUrl = config.get<string>('azureDevOps.organizationUrl');
 
             if (!pat || !this.organizationUrl) {
-                console.log('Azure DevOps PAT or organization URL not configured');
+                window.showInformationMessage('Azure DevOps PAT or organization URL not configured');
                 return;
             }
 
-            const authHandler = azdev.getPersonalAccessTokenHandler(pat);
-            this.connection = new azdev.WebApi(this.organizationUrl, authHandler);
+            const authHandler = getPersonalAccessTokenHandler(pat);
+            this.connection = new WebApi(this.organizationUrl, authHandler);
         } catch (error) {
             console.error('Failed to initialize Azure DevOps connection:', error);
         }
@@ -30,7 +30,7 @@ export class AzureDevOpsService {
     public extractWorkItemId(commitMessage: string): string | null {
         // Match common Azure DevOps work item patterns like "#123", "AB#123"
         const match = commitMessage.match(workItemPattern);
-        
+
         if (match) {
             return match[1] || match[2];
         }
@@ -58,7 +58,7 @@ export class AzureDevOpsService {
 
             const title = workItem.fields['System.Title']?.toString() || '';
             const description = workItem.fields['System.Description']?.toString() || '';
-            
+
             return `${title}\n${description}`;
         } catch (error) {
             console.error(`Failed to fetch work item ${workItemId}:`, error);

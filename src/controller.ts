@@ -69,6 +69,7 @@ export class GitBlameController {
 
     this._disposable = Disposable.from(...disposables);
     this._textDecorator = new TextDecorator();
+    
   }
 
   private async onTextEditorChange(editor: TextEditor | undefined) {
@@ -139,6 +140,7 @@ export class TextDecorator {
 
   private extractWorkItemId(commitMessage: string): string | null {
     const match = commitMessage.match(workItemPattern);
+    console.log(match);
 
     if (match) {
       return match[1] || match[2];

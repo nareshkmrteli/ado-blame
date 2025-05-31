@@ -99,6 +99,11 @@
           "type": "string",
           "default": "",
           "description": "Azure DevOps organization URL (e.g., https://dev.azure.com/your-org)"
+        },
+        "adoblame.azureDevOps.ado_pattern": {
+          "type": "string",
+          "default": ".*AB[#-](\\d+).*",
+          "description": "Azure DevOps ADO pattern (e.g., AB#223232 first commit"
         }
       }
     }
