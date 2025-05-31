@@ -6,8 +6,7 @@ import {
 } from "vscode";
 import { GitBlame } from "./blame";
 import * as path from "path";
-import * as moment from "moment";
-import { AzureDevOpsService } from "./ado";
+import { workItemPattern } from './const';
 
 interface BlameInfo {
   lines: {
@@ -139,7 +138,6 @@ export class TextDecorator {
   }
 
   private extractWorkItemId(commitMessage: string): string | null {
-    const workItemPattern = /#(\d+)|AB#(\d+)/;
     const match = commitMessage.match(workItemPattern);
 
     if (match) {

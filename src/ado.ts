@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as azdev from 'azure-devops-node-api';
-
+import { workItemPattern } from './const';
 export class AzureDevOpsService {
     private connection: azdev.WebApi | undefined;
     private organizationUrl: string | undefined;
@@ -29,7 +29,6 @@ export class AzureDevOpsService {
 
     public extractWorkItemId(commitMessage: string): string | null {
         // Match common Azure DevOps work item patterns like "#123", "AB#123"
-        const workItemPattern = /#(\d+)|AB#(\d+)/;
         const match = commitMessage.match(workItemPattern);
         
         if (match) {
