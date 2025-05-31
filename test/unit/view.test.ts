@@ -11,6 +11,7 @@ describe('StatusBarView', () => {
             tooltip: '',
             command: '',
             show: () => {},
+            hide: () => {}
         };
         statusBarView = new StatusBarView(mockStatusBarItem);
     });
@@ -20,12 +21,11 @@ describe('StatusBarView', () => {
     });
 
     it('should update text with git-commit icon', () => {
-        statusBarView.update('Test message');
+        statusBarView.updateText('Test message');
         assert.strictEqual(mockStatusBarItem.text, '$(git-commit) Test message');
     });
 
     it('should set ADO Blame tooltip', () => {
-        statusBarView.update('Test message');
         assert.strictEqual(mockStatusBarItem.tooltip, 'ADO Blame');
     });
 
@@ -33,7 +33,15 @@ describe('StatusBarView', () => {
         let showCalled = false;
         mockStatusBarItem.show = () => { showCalled = true; };
         
-        statusBarView.update('Test message');
+        statusBarView.updateText('Test message');
         assert.strictEqual(showCalled, true);
+    });
+
+    it('should hide status bar item when text is null', () => {
+        let hideCalled = false;
+        mockStatusBarItem.hide = () => { hideCalled = true; };
+        
+        statusBarView.update('Test message');
+        assert.strictEqual(hideCalled, true);
     });
 }); 

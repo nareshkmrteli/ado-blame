@@ -18,6 +18,7 @@ junit.xml
 
 # VS Code directories
 .vscode-test/
+.vscode-test-*
 *.vsix
 
 # TypeScript
