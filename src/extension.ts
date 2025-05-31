@@ -21,15 +21,7 @@ export function activate(context: ExtensionContext) {
   if (!workspace.workspaceFolders) {
     return;
   }
-
   const workspaceRoot = workspace.workspaceFolders[0].uri.fsPath;
-  commands.registerCommand("extension.blame", () => {
-    showMessage(context, workspaceRoot);
-  });
-
-  // Try to find the repo first in the workspace, then in parent directories
-  // because sometimes one opens a subdirectory but still wants information
-  // about the full repo.
   lookupRepo(context, workspaceRoot);
 }
 
@@ -47,7 +39,14 @@ function lookupRepo(context: ExtensionContext, repoDir: string) {
       const statusBar = window.createStatusBarItem(StatusBarAlignment.Left);
       const gitBlame = new GitBlame(repoPath, gitBlameShell);
       const view = new StatusBarView(statusBar);
+      const adoService = new AzureDevOpsService();
       const controller = new GitBlameController(gitBlame, repoDir, view);
+
+      commands.registerCommand("extension.blame", async () => {
+        view.setLoading(true)
+        await fetchAdoDetails(gitBlame, adoService, repoDir);
+        view.setLoading(false);
+      });
 
       context.subscriptions.push(controller);
       context.subscriptions.push(gitBlame);
@@ -56,61 +55,39 @@ function lookupRepo(context: ExtensionContext, repoDir: string) {
   });
 }
 
-function showMessage(context: ExtensionContext, repoDir: string) {
-  const repoPath = path.join(repoDir, ".git");
-
-  fs.access(repoPath, (err) => {
-    if (err) {
-      // No access to git repo or no repo, try to go up.
-      const parentDir = path.dirname(repoDir);
-      if (parentDir != repoDir) {
-        showMessage(context, parentDir);
-      }
-    } else {
-      const editor = window.activeTextEditor;
-
-      if (!editor) return;
-
-      const doc = editor.document;
-
-      if (!doc) return;
-      if (doc.isUntitled) return; // Document hasn't been saved and is not in git.
-
-      const gitBlame = new GitBlame(repoPath, gitBlameShell);
-      const lineNumber = editor.selection.active.line + 1; // line is zero based
-      const file = path.relative(repoDir, editor.document.fileName);
-
-      gitBlame
-        .getBlameInfo(file)
-        .then(async (info) => {
-          if (lineNumber in info.lines) {
-            const hash = info.lines[lineNumber].hash;
-            const commitInfo = info.commits[hash];
-            const adoService = new AzureDevOpsService();
-
-            try {
-              
-              const enrichedMessage = await adoService.enrichBlameInfo(
-                commitInfo.summary
-              );
-              if (enrichedMessage !== commitInfo.summary) {
-                showHtmlContent(commitInfo.summary, enrichedMessage);
-              }
-            } catch (error) {
-              console.error("Error fetching Azure DevOps details:", error);
-              window.showErrorMessage(
-                "Failed to fetch Azure DevOps details. Please check your configuration."
-              );
-            }
+async function fetchAdoDetails(gitBlame: GitBlame, adoService: AzureDevOpsService, gitRoot: string) {
+  const editor = window.activeTextEditor;
+  if (!editor) return;
+  const doc = editor.document;
+  if (!doc) return;
+  if (doc.isUntitled) return;
+  const lineNumber = editor.selection.active.line + 1;
+  const file = path.relative(gitRoot, editor.document.fileName);
+  
+  await gitBlame
+    .getBlameInfo(file)
+    .then(async (info) => {
+      if (lineNumber in info.lines) {
+        const hash = info.lines[lineNumber].hash;
+        const commitInfo = info.commits[hash];
+        try {
+          const enrichedMessage = await adoService.enrichBlameInfo(
+            commitInfo.summary
+          );
+          if (enrichedMessage !== commitInfo.summary) {
+            showHtmlContent(commitInfo.summary, enrichedMessage);
           }
-        })
-        .catch((error) => {
-          console.error("Error getting blame info:", error);
-          window.showErrorMessage("Failed to get git blame information.");
-        });
-    }
-  });
+        } catch (error) {
+          console.error("Error fetching Azure DevOps details:", error);
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("Error getting blame info:", error);
+      window.showErrorMessage("Failed to get git blame information.");
+    });
 }
+
 
 function showHtmlContent(title: string, content: string) {
   const panel = window.createWebviewPanel(

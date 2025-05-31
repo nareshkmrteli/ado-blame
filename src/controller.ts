@@ -28,6 +28,7 @@ interface BlameInfo {
 
 interface View {
   update: (message: string) => void;
+  updateText: (message: string) => void;
 }
 
 interface Editor {
@@ -106,7 +107,7 @@ export class GitBlameController {
   }
 
   clear() {
-    this.view.update("");
+    this.view.updateText("");
   }
 
   async show(blameInfo: BlameInfo, lineNumber: number): Promise<void> {
@@ -115,12 +116,11 @@ export class GitBlameController {
       const commitInfo = blameInfo.commits[hash];
       let message = this._textDecorator.toTextView(commitInfo);
       if (message) {
-        this.view.update(message);
+        this.view.updateText(message);
       } else {
         this.clear();
       }
     } else {
-      // No line info.
       this.clear();
     }
   }
@@ -131,7 +131,7 @@ export class GitBlameController {
 }
 
 export class TextDecorator {
-  toTextView(commit: BlameInfo["commits"][string]): string|null {
+  toTextView(commit: BlameInfo["commits"][string]): string | null {
     const summary = commit.summary;
     const workItemId = this.extractWorkItemId(summary);
     return workItemId ? "ADO#" + workItemId : null;
