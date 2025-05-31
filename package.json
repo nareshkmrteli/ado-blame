@@ -2,7 +2,7 @@
   "name": "ado-blame",
   "displayName": "ADO Blame",
   "description": "See git blame information with Azure DevOps work item details in the status bar.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "nareshkmrteli",
   "engines": {
     "vscode": "^1.74.0",
